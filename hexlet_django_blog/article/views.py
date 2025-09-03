@@ -6,8 +6,9 @@ from django.views import View
 from django.shortcuts import redirect
 from django.urls import reverse
 from hexlet_django_blog.article.models import Article
-from .forms import CommentArticleForm
-from .models import ArticleComment
+from .forms import CommentArticleForm, ArticleForm
+from .models import ArticleComment, Article
+
 
 
 # def index(request):
@@ -41,6 +42,19 @@ class ArticleView(View):
             },
         )
 
+class ArticleFormCreateView(View):
+    def get(self, request, *args, **kwargs):
+        form = ArticleForm()
+        return render(request, "articles/create.html", {"form": form})
+
+    def post(self, request, *args, **kwargs):
+        form = ArticleForm(request.POST)
+        if form.is_valid():  # Если данные корректные, то сохраняем данные формы
+            form.save()
+            return redirect('articles')  # Редирект на указанный маршрут
+        # Если данные некорректные, то возвращаем человека обратно на страницу с заполненной формой
+        return render(request, 'articles/create.html', {'form': form})
+
 
 
 # def index(request):
@@ -69,8 +83,31 @@ class CommentArticleView(View):
             comment.save()
 
     # если метод GET, то создаем пустую форму
+
+
     def get(self, request, *args, **kwargs):
         form = CommentArticleForm()  # Создаем экземпляр нашей формы
         return render(
             request, "comment.html", {"form": form}
         )  # Передаем нашу форму в контексте
+
+class ArticleFormEditView(View):
+    def get(self, request, *args, **kwargs):
+        article_id = kwargs.get("id")
+        article = Article.objects.get(id=article_id)
+        form = ArticleForm(instance=article)
+        return render(
+            request, "articles/update.html", {"form": form, "article_id": article_id}
+        )
+
+    def post(self, request, *args, **kwargs):
+        article_id = kwargs.get("id")
+        article = Article.objects.get(id=article_id)
+        form = ArticleForm(request.POST, instance=article)
+        if form.is_valid():
+            form.save()
+            return redirect("articles")
+
+        return render(
+            request, "articles/update.html", {"form": form, "article_id": article_id}
+        )
